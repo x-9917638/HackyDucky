@@ -16,7 +16,7 @@
 ~~- Exit~~
 
 PYTHON
-~~- Persistence: Copies itself into a few appdata directories~~ CANCELLED
+- ~~Persistence: Copies itself into a few appdata directories~~ CANCELLED
 - Behaviour
   ~~- Utilise input apis from windows to troll the user~~ DONE
     ~~- Block input~~ WORKS
