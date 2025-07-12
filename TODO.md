@@ -16,17 +16,17 @@
 ~~- Exit~~
 
 PYTHON
-- Persistence: Copies itself into a few appdata directories
+~~- Persistence: Copies itself into a few appdata directories~~ CANCELLED
 - Behaviour
-  - Utilise input apis from windows to troll the user
-    ~~- Block input~~
-    - Change keyboard layout
-    ~~- Send a few keystrokes~~
-    - Set double click threshold to crazy high so everything become doubleclick
-    - Swap mouse buttons
-    - etc.etc.
-  - Create annoying 'adware' (actually just cat image) popups
-  - Redirects / forced rickrolls
+  ~~- Utilise input apis from windows to troll the user~~ DONE
+    ~~- Block input~~ WORKS
+    ~~- Change keyboard layout~~ No work :c
+    ~~- Send a few keystrokes~~ WORKS
+    ~~- Set double click threshold to crazy high so everything become doubleclick~~ WORKS 
+    ~~- Swap mouse buttons~~ WORKS
+    ~~- etc.etc.~~ Sense change, cursor trail 
+  ~~- Create annoying 'adware' (actually just cat image) popups~~ DONE & WORKING!
+  ~~- Redirects / forced rickrolls~~ DONE & WORKING!
   
 ~~BATCH SCRIPT~~ CANCELED - Implemented persistence via task scheduler instead
 ~~- Simply run the first instance of the python script it can find~~
