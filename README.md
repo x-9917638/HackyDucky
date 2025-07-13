@@ -10,6 +10,8 @@ This is a payload written for a hackyducky consisting of:
   1. Basic duckyscript for setting up the second stage of the payload.
   2. An embedded python distribution with the Tkinter and pillow libraries installed.
   3. A python script that does the real work.
+<br>
+Unfortunately, Stage 1 only works on Windows.
 
 # How it works
 ## Stage 1 - DuckyScript
@@ -23,8 +25,9 @@ This script is executed after the next logon.
 <br>
 There are 3 main features:
   - Input manipulation - Random mouse clicks, random mouse movement, random caps lock, etc.
-  - Cat images - Gets an image from the [CATAAS](https://cataas.com/) api and displays it in an unclosable, unminimisable window
+  - Cat images - Gets an image from the [CATAAS](https://cataas.com/) api and displays it in an unkillable, unminimisable window
   - Browser hijacking - Will randomly open an embarassing webpage (I don't have much of a list right now, give me some ideas)
+<br>
 All these features run in seperate threads, and will randomly occur to disrupt the user
 
 # Licence
