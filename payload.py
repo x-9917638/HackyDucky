@@ -336,11 +336,11 @@ def funny_windows():
     root = tk.Tk()
     root.withdraw()  # Hide the root window
 
-    last_window = {'window': None} # Track the window we need to close
+    last_window = {} # Track the window we need to close
 
     def show_cat():
 
-        if last_window['window'] is not None:
+        if last_window.get('window'):
             last_window['window'].destroy()
 
         response = json.loads(urlopen(url).read().decode('utf-8'))
